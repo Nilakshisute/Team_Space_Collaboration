@@ -48,7 +48,7 @@ const Login = () => {
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="gray.50" px={4}>
+    <Flex minH="100vh" align="center" justify="center" bg="blue.50" px={4}>
       <Box
         bg="white"
         p={8}
