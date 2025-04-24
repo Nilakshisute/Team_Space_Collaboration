@@ -12,18 +12,19 @@ import {
   Heading,
   useToast,
   Spinner,
-  Divider,
+  Select,
   HStack,
   Link,
 } from "@chakra-ui/react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
-import { setDoc, doc } from "firebase/firestore";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 
-const Register = () => {
+const RegisterPage = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -36,13 +37,11 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // Validate passwords
     if (password !== confirmPassword) {
       setPasswordError("Passwords do not match");
       return;
     }
 
-    // Validate terms acceptance
     if (!isTermsAccepted) {
       toast({
         title: "Terms not accepted.",
@@ -58,33 +57,22 @@ const Register = () => {
     setPasswordError("");
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
+      const userId = userCredential.user.uid;
 
-      // Save user data to Firestore
-      try {
-        await setDoc(doc(db, "users", userCredential.user.uid), {
-          firstName,
-          lastName,
-          email,
-          createdAt: new Date(),
-        });
-      } catch (firestoreError) {
-        toast({
-          title: "Error saving user data.",
-          description: firestoreError.message,
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-        throw firestoreError; // Re-throw to handle it in the outer catch block
-      }
+      await setDoc(doc(db, "users", userId), {
+        firstName,
+        lastName,
+        email,
+        role,
+        joinedWorkspaces: [],
+        createdAt: serverTimestamp(),
+      });
 
-      // Show success toast and navigate
       toast({
         title: "Account created.",
         description: "Welcome to TeamSpace!",
@@ -95,7 +83,6 @@ const Register = () => {
 
       navigate("/home");
     } catch (error) {
-      // Handle errors during account creation
       toast({
         title: "Error creating account.",
         description: error.message,
@@ -110,17 +97,12 @@ const Register = () => {
 
   return (
     <Flex minH="100vh" align="center" justify="center" bg="gray.50" p={4}>
-      <Box
-        w="100%"
-        maxW="md"
-        bg="white"
-        boxShadow="lg"
-        p={8}
-        borderRadius="lg"
-      >
+      <Box w="100%" maxW="md" bg="white" boxShadow="lg" p={8} borderRadius="lg">
         <VStack spacing={6} align="stretch">
           <Box textAlign="center">
-            <Heading size="lg" color="teal.600">Join TeamSpace</Heading>
+            <Heading size="lg" color="teal.600">
+              Join TeamSpace
+            </Heading>
             <Text fontSize="sm" color="gray.500" mt={2}>
               Create your account to start collaborating
             </Text>
@@ -135,7 +117,6 @@ const Register = () => {
                     placeholder="John"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    size="md"
                   />
                 </FormControl>
                 <FormControl isRequired>
@@ -144,7 +125,6 @@ const Register = () => {
                     placeholder="Doe"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    size="md"
                   />
                 </FormControl>
               </HStack>
@@ -153,10 +133,9 @@ const Register = () => {
                 <FormLabel>Email</FormLabel>
                 <Input
                   type="email"
-                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  size="md"
+                  placeholder="you@example.com"
                 />
               </FormControl>
 
@@ -164,11 +143,10 @@ const Register = () => {
                 <FormLabel>Password</FormLabel>
                 <Input
                   type="password"
-                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   minLength={6}
-                  size="md"
                 />
                 <Text fontSize="xs" color="gray.500" mt={1}>
                   Password must be at least 6 characters
@@ -179,16 +157,26 @@ const Register = () => {
                 <FormLabel>Confirm Password</FormLabel>
                 <Input
                   type="password"
-                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  size="md"
+                  placeholder="••••••••"
                 />
                 {passwordError && (
                   <Text color="red.500" fontSize="xs" mt={1}>
                     {passwordError}
                   </Text>
                 )}
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>Role</FormLabel>
+                <Select
+                  placeholder="Select your role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="admin">Admin (create workspaces)</option>
+                  <option value="member">Member (join workspaces)</option>
+                </Select>
               </FormControl>
 
               <FormControl>
@@ -215,17 +203,20 @@ const Register = () => {
                 type="submit"
                 width="full"
                 isDisabled={isLoading}
-                size="md"
-                mt={2}
               >
                 {isLoading ? <Spinner size="sm" /> : "Create Account"}
               </Button>
             </VStack>
           </form>
-    
+
           <Text textAlign="center" fontSize="sm" color="gray.600" mt={4}>
             Already have an account?{" "}
-            <Link as={RouterLink} to="/login" color="teal.500" fontWeight="medium">
+            <Link
+              as={RouterLink}
+              to="/login"
+              color="teal.500"
+              fontWeight="medium"
+            >
               Sign in
             </Link>
           </Text>
@@ -235,4 +226,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default RegisterPage;
