@@ -100,7 +100,7 @@ const Login = () => {
 
               <Button
                 colorScheme="teal"
-                type="submit"
+                type="submit" 
                 isLoading={isLoading}
                 loadingText="Signing in"
                 width="full"
@@ -114,19 +114,6 @@ const Login = () => {
 
           <Divider />
           
-          <Text fontSize="sm" color="gray.500" textAlign="center">
-            Or sign in with
-          </Text>
-          
-          <HStack spacing={4} justify="center" width="full">
-            <Button size="md" variant="outline" width="full" leftIcon={<Text>G</Text>}>
-              Google
-            </Button>
-            <Button size="md" variant="outline" width="full" leftIcon={<Text>f</Text>}>
-              Facebook
-            </Button>
-          </HStack>
-
           <Text textAlign="center" fontSize="sm" color="gray.600">
             Don't have an account?{" "}
             <Link as={RouterLink} to="/register" color="teal.500" fontWeight="medium">

@@ -222,22 +222,7 @@ const Register = () => {
               </Button>
             </VStack>
           </form>
-
-          <Divider />
-          
-          <Text fontSize="sm" color="gray.500" textAlign="center">
-            Or register with
-          </Text>
-          
-          <HStack spacing={4} justify="center">
-            <Button size="md" variant="outline" width="full" leftIcon={<Text>G</Text>}>
-              Google
-            </Button>
-            <Button size="md" variant="outline" width="full" leftIcon={<Text>f</Text>}>
-              Facebook
-            </Button>
-          </HStack>
-          
+    
           <Text textAlign="center" fontSize="sm" color="gray.600" mt={4}>
             Already have an account?{" "}
             <Link as={RouterLink} to="/login" color="teal.500" fontWeight="medium">
