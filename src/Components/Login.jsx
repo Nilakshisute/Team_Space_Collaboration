@@ -2,38 +2,47 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
-  Checkbox,
   Flex,
   FormControl,
   FormLabel,
-  Heading,
   Input,
-  Link,
-  Spinner,
-  Stack,
   Text,
-  useToast,
   VStack,
-  Divider,
-  HStack,
+  Heading,
+  useToast,
+  Spinner,
+  Link,
 } from "@chakra-ui/react";
-import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/firebaseConfig";
+import { auth, db } from "../firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const Login = () => {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
   const toast = useToast();
+  const navigate = useNavigate();
+  const { setUserData } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/home");
+      const userCred = await signInWithEmailAndPassword(auth, email, password);
+      const userId = userCred.user.uid;
+
+      const userDoc = await getDoc(doc(db, "users", userId));
+      if (userDoc.exists()) {
+        const userData = { uid: userId, ...userDoc.data() };
+        setUserData(userData);
+        navigate("/home");
+      } else {
+        throw new Error("User profile not found in Firestore.");
+      }
     } catch (error) {
       toast({
         title: "Login failed",
@@ -48,7 +57,7 @@ const Login = () => {
   };
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="blue.50" px={4}>
+    <Flex minH="100vh" align="center" justify="center" bg="gray.50" px={4}>
       <Box
         bg="white"
         p={8}
@@ -65,59 +74,43 @@ const Login = () => {
             </Text>
           </Box>
 
-          <form onSubmit={handleLogin} style={{ width: "100%" }}>
+          <form onSubmit={handleLogin}>
             <VStack spacing={5}>
-              <FormControl id="email" isRequired>
-                <FormLabel>Email address</FormLabel>
+              <FormControl isRequired>
+                <FormLabel>Email</FormLabel>
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  size="md"
                 />
               </FormControl>
 
-              <FormControl id="password" isRequired>
+              <FormControl isRequired>
                 <FormLabel>Password</FormLabel>
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  size="md"
                 />
               </FormControl>
 
-              <Flex justify="space-between" align="center" width="full">
-                <Checkbox colorScheme="teal">
-                  <Text fontSize="sm">Remember me</Text>
-                </Checkbox>
-                <Link as={RouterLink} to="/forgot-password" color="teal.500" fontSize="sm">
-                  Forgot password?
-                </Link>
-              </Flex>
-
               <Button
+                type="submit"
                 colorScheme="teal"
-                type="submit" 
-                isLoading={isLoading}
-                loadingText="Signing in"
                 width="full"
-                size="md"
-                mt={2}
+                isDisabled={isLoading}
               >
-                Sign in
+                {isLoading ? <Spinner size="sm" /> : "Login"}
               </Button>
             </VStack>
           </form>
 
-          <Divider />
-          
           <Text textAlign="center" fontSize="sm" color="gray.600">
             Don't have an account?{" "}
-            <Link as={RouterLink} to="/register" color="teal.500" fontWeight="medium">
-              Create one
+            <Link as={RouterLink} to="/register" color="teal.500">
+              Register
             </Link>
           </Text>
         </VStack>
@@ -126,4 +119,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default LoginPage;
