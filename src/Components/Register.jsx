@@ -16,6 +16,7 @@ import {
   HStack,
   Link,
 } from "@chakra-ui/react";
+
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
@@ -109,7 +110,7 @@ const RegisterPage = () => {
           </Box>
 
           <form onSubmit={handleRegister}>
-            <VStack spacing={5}>
+            <VStack spacing={4}>
               <HStack spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>First Name</FormLabel>
