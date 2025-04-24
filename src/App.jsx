@@ -1,13 +1,12 @@
-
-
-function App() {
-
-
+import React from "react";
+import { Box } from "@chakra-ui/react";
+import Header from "./Components/Header";
+const App = () => {
   return (
-    <>
-      <h1>Team_Space_Collaboration</h1>
-    </>
-  )
-}
+    <Box>
+      <Header />
+    </Box>
+  );
+};
 
-export default App
+export default App;
