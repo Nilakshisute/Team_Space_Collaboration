@@ -1,5 +1,4 @@
-// Components/workspace/DocumentsTab.jsx (updated)
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -48,6 +47,7 @@ const DocumentsTab = ({ workspaceId }) => {
   const [documentName, setDocumentName] = useState("");
   const [newDocName, setNewDocName] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const {
     isOpen: isUploadOpen,
     onOpen: onUploadOpen,
@@ -112,86 +112,116 @@ const DocumentsTab = ({ workspaceId }) => {
   }, [workspaceId, toast]);
 
   const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      if (!documentName) {
+        setDocumentName(file.name);
+      }
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      toast({
-        title: "No file selected",
-        status: "error",
-        duration: 3000,
-      });
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      // Upload file to Firebase Storage
-      const storageRef = ref(
-        storage,
-        `documents/${workspaceId}/${selectedFile.name}`
-      );
-      await uploadBytes(storageRef, selectedFile);
-
-      // Get download URL
-      const downloadURL = await getDownloadURL(storageRef);
-
-      // Add document reference to Firestore
-      const docRef = await addDoc(collection(db, "documents"), {
-        name: documentName || selectedFile.name,
-        fileName: selectedFile.name,
-        fileType: selectedFile.type,
-        fileSize: selectedFile.size,
-        uploadedBy: userData.uid,
-        uploaderName: `${userData.firstName} ${userData.lastName}`,
-        workspaceId,
-        url: downloadURL,
-        type: "upload",
-        createdAt: serverTimestamp(),
-      });
-
-      // Add new document to local state
-      setDocuments([
-        ...documents,
-        {
-          id: docRef.id,
-          name: documentName || selectedFile.name,
-          fileName: selectedFile.name,
-          fileType: selectedFile.type,
-          fileSize: selectedFile.size,
-          uploadedBy: userData.uid,
-          uploaderName: `${userData.firstName} ${userData.lastName}`,
-          workspaceId,
-          url: downloadURL,
-          type: "upload",
-        },
-      ]);
-
-      toast({
-        title: "Document uploaded successfully",
-        status: "success",
-        duration: 3000,
-      });
-
-      // Reset form and close modal
-      setDocumentName("");
-      setSelectedFile(null);
-      onUploadClose();
-    } catch (error) {
-      toast({
-        title: "Error uploading document",
-        description: error.message,
-        status: "error",
-        duration: 3000,
-      });
-    } finally {
-      setUploading(false);
+  const resetUploadForm = () => {
+    setDocumentName("");
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
+
+  const handleUploadClose = () => {
+    resetUploadForm();
+    onUploadClose();
+  };
+
+  // Make sure your firebase/firebaseConfig.js has Storage properly initialized
+// For example:
+// import { getStorage } from "firebase/storage";
+// export const storage = getStorage(app);
+
+// In your handleUpload function, we need to ensure the file is being uploaded correctly:
+
+const handleUpload = async () => {
+  if (!selectedFile) {
+    toast({
+      title: "No file selected",
+      status: "error",
+      duration: 3000,
+    });
+    return;
+  }
+
+  setUploading(true);
+
+  try {
+    // Create a unique file path to avoid conflicts
+    const timestamp = new Date().getTime();
+    const storageRef = ref(
+      storage,
+      `documents/${workspaceId}/${timestamp}_${selectedFile.name}`
+    );
+    
+    // Upload the file
+    const uploadTaskSnapshot = await uploadBytes(storageRef, selectedFile);
+    console.log("File uploaded successfully:", uploadTaskSnapshot);
+    
+    // Get the download URL
+    const downloadURL = await getDownloadURL(storageRef);
+    console.log("Download URL:", downloadURL);
+
+    // Add document reference to Firestore
+    const docRef = await addDoc(collection(db, "documents"), {
+      name: documentName || selectedFile.name,
+      fileName: selectedFile.name,
+      fileType: selectedFile.type,
+      fileSize: selectedFile.size,
+      uploadedBy: userData.uid,
+      uploaderName: `${userData.firstName} ${userData.lastName}`,
+      workspaceId,
+      url: downloadURL,
+      type: "upload",
+      createdAt: serverTimestamp(),
+    });
+
+    // Add new document to local state
+    const newDocument = {
+      id: docRef.id,
+      name: documentName || selectedFile.name,
+      fileName: selectedFile.name,
+      fileType: selectedFile.type,
+      fileSize: selectedFile.size,
+      uploadedBy: userData.uid,
+      uploaderName: `${userData.firstName} ${userData.lastName}`,
+      workspaceId,
+      url: downloadURL,
+      type: "upload",
+      createdAt: { seconds: Date.now() / 1000 } // Add this for display before server updates
+    };
+    
+    setDocuments(prevDocs => [...prevDocs, newDocument]);
+
+    toast({
+      title: "Document uploaded successfully",
+      status: "success",
+      duration: 3000,
+    });
+
+    // Reset form and close modal
+    setDocumentName("");
+    setSelectedFile(null);
+    onUploadClose();
+  } catch (error) {
+    console.error("Upload error:", error);
+    toast({
+      title: "Error uploading document",
+      description: error.message,
+      status: "error",
+      duration: 3000,
+    });
+  } finally {
+    setUploading(false);
+  }
+};
 
   const handleCreateDocument = async () => {
     if (!newDocName) {
@@ -351,7 +381,7 @@ const DocumentsTab = ({ workspaceId }) => {
       </Tabs>
 
       {/* Upload Document Modal */}
-      <Modal isOpen={isUploadOpen} onClose={onUploadClose}>
+      <Modal isOpen={isUploadOpen} onClose={handleUploadClose}>
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>Upload File</ModalHeader>
@@ -367,17 +397,29 @@ const DocumentsTab = ({ workspaceId }) => {
             </FormControl>
             <FormControl>
               <FormLabel>Select File</FormLabel>
-              <Input type="file" onChange={handleFileChange} p={1} />
+              <Input 
+                type="file" 
+                onChange={handleFileChange} 
+                p={1} 
+                ref={fileInputRef}
+                accept="*/*"
+              />
+              {selectedFile && (
+                <Text mt={2} fontSize="sm" color="gray.600">
+                  Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                </Text>
+              )}
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onUploadClose}>
+            <Button variant="ghost" mr={3} onClick={handleUploadClose}>
               Cancel
             </Button>
             <Button
               colorScheme="teal"
               onClick={handleUpload}
               isLoading={uploading}
+              isDisabled={!selectedFile}
             >
               Upload
             </Button>
