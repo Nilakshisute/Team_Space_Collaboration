@@ -1,5 +1,5 @@
 // Components/workspace/DocumentsTab.jsx (updated)
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -26,6 +26,10 @@ import {
   useDisclosure,
   useToast,
   Spinner,
+  Progress,
+  Badge,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react";
 import {
   collection,
@@ -35,7 +39,7 @@ import {
   getDocs,
   serverTimestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { db, storage } from "../../firebase/firebaseConfig";
 import { useAuth } from "../../context/AuthContext";
 
@@ -44,14 +48,18 @@ const DocumentsTab = ({ workspaceId }) => {
   const [editableDocuments, setEditableDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [creating, setCreating] = useState(false);
   const [documentName, setDocumentName] = useState("");
   const [newDocName, setNewDocName] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
+  const [fileError, setFileError] = useState("");
+  const fileInputRef = useRef(null);
+
   const {
     isOpen: isUploadOpen,
     onOpen: onUploadOpen,
-    onClose: onUploadClose,
+    onClose: handleUploadClose,
   } = useDisclosure();
   const {
     isOpen: isCreateOpen,
@@ -61,6 +69,19 @@ const DocumentsTab = ({ workspaceId }) => {
   const { userData } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+
+  // Custom onClose handler for upload modal to reset form
+  const onUploadClose = () => {
+    setSelectedFile(null);
+    setDocumentName("");
+    setFileError("");
+    setUploadProgress(0);
+    handleUploadClose();
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -97,23 +118,60 @@ const DocumentsTab = ({ workspaceId }) => {
 
         setEditableDocuments(editableDocs);
       } catch (error) {
+        console.error("Error fetching documents:", error);
         toast({
           title: "Error fetching documents",
           description: error.message,
           status: "error",
           duration: 3000,
+          isClosable: true,
         });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDocuments();
+    if (workspaceId) {
+      fetchDocuments();
+    }
   }, [workspaceId, toast]);
 
+  const validateFile = (file) => {
+    // File size validation (max 20MB)
+    const maxSize = 20 * 1024 * 1024; // 20MB in bytes
+    if (file.size > maxSize) {
+      return "File size exceeds 20MB limit";
+    }
+
+    // Add additional file type validation if needed
+    // const allowedTypes = ['application/pdf', 'image/jpeg', ...];
+    // if (!allowedTypes.includes(file.type)) {
+    //   return "File type not supported";
+    // }
+
+    return null;
+  };
+
   const handleFileChange = (e) => {
+    setFileError("");
     if (e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      const error = validateFile(file);
+
+      if (error) {
+        setFileError(error);
+        setSelectedFile(null);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        setSelectedFile(file);
+        // If no document name is set, use the file name as default
+        if (!documentName) {
+          setDocumentName(file.name);
+        }
+      }
     }
   };
 
@@ -123,19 +181,40 @@ const DocumentsTab = ({ workspaceId }) => {
         title: "No file selected",
         status: "error",
         duration: 3000,
+        isClosable: true,
       });
       return;
     }
 
     setUploading(true);
+    setUploadProgress(0);
 
     try {
-      // Upload file to Firebase Storage
+      // Create a storage reference
       const storageRef = ref(
         storage,
-        `documents/${workspaceId}/${selectedFile.name}`
+        `documents/${workspaceId}/${Date.now()}_${selectedFile.name}`
       );
-      await uploadBytes(storageRef, selectedFile);
+
+      // Create an upload task with progress monitoring
+      const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+      // Monitor upload progress
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload error:", error);
+          throw error;
+        }
+      );
+
+      // Wait for upload completion
+      await uploadTask;
 
       // Get download URL
       const downloadURL = await getDownloadURL(storageRef);
@@ -155,8 +234,8 @@ const DocumentsTab = ({ workspaceId }) => {
       });
 
       // Add new document to local state
-      setDocuments([
-        ...documents,
+      setDocuments((prevDocs) => [
+        ...prevDocs,
         {
           id: docRef.id,
           name: documentName || selectedFile.name,
@@ -168,6 +247,7 @@ const DocumentsTab = ({ workspaceId }) => {
           workspaceId,
           url: downloadURL,
           type: "upload",
+          createdAt: { seconds: Date.now() / 1000 }, // Add a temporary timestamp for immediate display
         },
       ]);
 
@@ -175,18 +255,19 @@ const DocumentsTab = ({ workspaceId }) => {
         title: "Document uploaded successfully",
         status: "success",
         duration: 3000,
+        isClosable: true,
       });
 
       // Reset form and close modal
-      setDocumentName("");
-      setSelectedFile(null);
       onUploadClose();
     } catch (error) {
+      console.error("Upload error details:", error);
       toast({
         title: "Error uploading document",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         status: "error",
-        duration: 3000,
+        duration: 5000,
+        isClosable: true,
       });
     } finally {
       setUploading(false);
@@ -194,11 +275,12 @@ const DocumentsTab = ({ workspaceId }) => {
   };
 
   const handleCreateDocument = async () => {
-    if (!newDocName) {
+    if (!newDocName || newDocName.trim() === "") {
       toast({
         title: "Document name required",
         status: "error",
         duration: 3000,
+        isClosable: true,
       });
       return;
     }
@@ -208,7 +290,7 @@ const DocumentsTab = ({ workspaceId }) => {
     try {
       // Add new editable document to Firestore
       const docRef = await addDoc(collection(db, "documents"), {
-        name: newDocName,
+        name: newDocName.trim(),
         content: "",
         createdBy: userData.uid,
         creatorName: `${userData.firstName} ${userData.lastName}`,
@@ -223,16 +305,19 @@ const DocumentsTab = ({ workspaceId }) => {
         title: "Document created",
         status: "success",
         duration: 3000,
+        isClosable: true,
       });
 
       // Navigate to the document editor
       navigate(`/workspace/${workspaceId}/document/${docRef.id}`);
     } catch (error) {
+      console.error("Error creating document:", error);
       toast({
         title: "Error creating document",
-        description: error.message,
+        description: error.message || "An unexpected error occurred",
         status: "error",
-        duration: 3000,
+        duration: 5000,
+        isClosable: true,
       });
     } finally {
       setCreating(false);
@@ -241,25 +326,38 @@ const DocumentsTab = ({ workspaceId }) => {
 
   const openDocument = (document) => {
     if (document.type === "upload") {
-      window.open(document.url, "_blank");
+      window.open(document.url, "_blank", "noopener,noreferrer");
     } else {
       navigate(`/workspace/${workspaceId}/document/${document.id}`);
     }
   };
 
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
   if (loading) {
     return (
-      <Flex justify="center" p={10}>
-        <Spinner size="xl" />
+      <Flex justify="center" align="center" p={10} height="50vh">
+        <Spinner size="xl" thickness="4px" color="teal.500" />
       </Flex>
     );
   }
 
   return (
     <Box>
-      <Flex justifyContent="space-between" mb={6}>
+      <Flex
+        justifyContent="space-between"
+        mb={6}
+        alignItems="center"
+        flexWrap="wrap"
+      >
         <Heading size="md">Documents</Heading>
-        <Flex>
+        <Flex mt={{ base: 2, md: 0 }}>
           <Button colorScheme="teal" onClick={onCreateOpen} mr={3}>
             Create Document
           </Button>
@@ -289,6 +387,7 @@ const DocumentsTab = ({ workspaceId }) => {
                     _hover={{ bg: "gray.50", transform: "translateY(-2px)" }}
                     transition="all 0.2s"
                     onClick={() => openDocument(doc)}
+                    shadow="sm"
                   >
                     <Text fontWeight="bold" isTruncated>
                       {doc.name}
@@ -308,6 +407,9 @@ const DocumentsTab = ({ workspaceId }) => {
             ) : (
               <Box textAlign="center" p={10} bg="gray.50" borderRadius="lg">
                 <Text>No editable documents created yet.</Text>
+                <Button colorScheme="teal" mt={4} onClick={onCreateOpen}>
+                  Create Your First Document
+                </Button>
               </Box>
             )}
           </TabPanel>
@@ -325,10 +427,20 @@ const DocumentsTab = ({ workspaceId }) => {
                     _hover={{ bg: "gray.50", transform: "translateY(-2px)" }}
                     transition="all 0.2s"
                     onClick={() => openDocument(doc)}
+                    shadow="sm"
                   >
                     <Text fontWeight="bold" isTruncated>
                       {doc.name}
                     </Text>
+                    <Flex mt={1} mb={1}>
+                      <Badge colorScheme="blue">
+                        {doc.fileType.split("/")[1]?.toUpperCase() ||
+                          doc.fileType}
+                      </Badge>
+                      <Text fontSize="xs" ml={2} color="gray.500">
+                        {doc.fileSize && formatFileSize(doc.fileSize)}
+                      </Text>
+                    </Flex>
                     <Text fontSize="sm" color="gray.500">
                       Uploaded by: {doc.uploaderName}
                     </Text>
@@ -344,6 +456,9 @@ const DocumentsTab = ({ workspaceId }) => {
             ) : (
               <Box textAlign="center" p={10} bg="gray.50" borderRadius="lg">
                 <Text>No files uploaded yet.</Text>
+                <Button colorScheme="blue" mt={4} onClick={onUploadOpen}>
+                  Upload Your First File
+                </Button>
               </Box>
             )}
           </TabPanel>
@@ -364,20 +479,60 @@ const DocumentsTab = ({ workspaceId }) => {
                 value={documentName}
                 onChange={(e) => setDocumentName(e.target.value)}
               />
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                If left blank, the file name will be used
+              </Text>
             </FormControl>
-            <FormControl>
+            <FormControl isInvalid={!!fileError}>
               <FormLabel>Select File</FormLabel>
-              <Input type="file" onChange={handleFileChange} p={1} />
+              <Input
+                type="file"
+                onChange={handleFileChange}
+                p={1}
+                ref={fileInputRef}
+              />
+              {fileError && (
+                <Alert status="error" mt={2} size="sm">
+                  <AlertIcon />
+                  {fileError}
+                </Alert>
+              )}
+              {selectedFile && !fileError && (
+                <Box mt={2}>
+                  <Text fontSize="sm" color="green.500">
+                    File selected: {selectedFile.name}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Size: {formatFileSize(selectedFile.size)}
+                  </Text>
+                </Box>
+              )}
             </FormControl>
+
+            {uploading && (
+              <Box mt={4}>
+                <Text fontSize="sm" mb={1}>
+                  Upload Progress: {Math.round(uploadProgress)}%
+                </Text>
+                <Progress value={uploadProgress} size="sm" colorScheme="teal" />
+              </Box>
+            )}
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onUploadClose}>
+            <Button
+              variant="ghost"
+              mr={3}
+              onClick={onUploadClose}
+              isDisabled={uploading}
+            >
               Cancel
             </Button>
             <Button
               colorScheme="teal"
               onClick={handleUpload}
               isLoading={uploading}
+              loadingText="Uploading..."
+              isDisabled={!selectedFile || !!fileError}
             >
               Upload
             </Button>
@@ -402,13 +557,19 @@ const DocumentsTab = ({ workspaceId }) => {
             </FormControl>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onCreateClose}>
+            <Button
+              variant="ghost"
+              mr={3}
+              onClick={onCreateClose}
+              isDisabled={creating}
+            >
               Cancel
             </Button>
             <Button
               colorScheme="teal"
               onClick={handleCreateDocument}
               isLoading={creating}
+              isDisabled={!newDocName.trim()}
             >
               Create
             </Button>
