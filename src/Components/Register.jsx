@@ -27,8 +27,9 @@ import {
   TabPanels,
   Tab,
   TabPanel,
+  Tooltip,
 } from "@chakra-ui/react";
-import { FaEye, FaEyeSlash, FaGoogle, FaGithub, FaUserPlus, FaArrowLeft } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaGoogle, FaGithub, FaUserPlus, FaArrowLeft, FaInfoCircle } from "react-icons/fa";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase/firebaseConfig";
 import { setDoc, doc, serverTimestamp } from "firebase/firestore";
@@ -67,6 +68,13 @@ const RegisterPage = () => {
   const textColorPrimary = useColorModeValue("gray.800", "white");
   const textColorSecondary = useColorModeValue("gray.600", "gray.300");
   const borderColor = useColorModeValue("gray.200", "gray.700");
+
+  // Role descriptions for tooltips
+  const roleDescriptions = {
+    admin: "Create and manage workspaces, invite members, and control workspace settings",
+    member: "Join workspaces, collaborate on projects, and contribute to team activities",
+    viewer: "View workspace content with limited interaction capabilities"
+  };
 
   const validateCurrentTab = () => {
     let isValid = true;
@@ -298,6 +306,18 @@ const RegisterPage = () => {
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
 
+  // Custom role option component with tooltip
+  const RoleOption = ({ value, label }) => (
+    <Flex align="center" justify="space-between" width="100%">
+      <Text>{label}</Text>
+      <Tooltip label={roleDescriptions[value]} placement="right">
+        <Box as="span">
+          <FaInfoCircle size="0.8em" />
+        </Box>
+      </Tooltip>
+    </Flex>
+  );
+
   return (
     <Box 
       minH="100vh" 
@@ -501,10 +521,17 @@ const RegisterPage = () => {
                           if (roleError) setRoleError("");
                         }}
                         size="sm"
+                        iconSize="sm"
                       >
                         <option value="admin">Admin (create workspaces)</option>
                         <option value="member">Member (join workspaces)</option>
+                        <option value="viewer">Viewer (read-only access)</option>
                       </Select>
+                      {role && (
+                        <Text fontSize="xs" color="gray.500" mt={1}>
+                          {roleDescriptions[role]}
+                        </Text>
+                      )}
                       {roleError && <FormErrorMessage fontSize="xs">{roleError}</FormErrorMessage>}
                     </FormControl>
 

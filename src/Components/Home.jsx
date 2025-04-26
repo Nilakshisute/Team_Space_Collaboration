@@ -29,12 +29,25 @@ import {
   Image,
   Divider,
   Link,
+  Tab,
+  Tabs,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
 } from "@chakra-ui/react";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, getDoc, doc } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import WorkspaceCard from "./workspace/WorkspaceCard";
 import JoinWorkspaceModal from "./JoinWorkspaceModel";
+import MembersTab from "./workspace/MembersTab";
 import { 
   FiSearch, 
   FiPlus, 
@@ -45,7 +58,8 @@ import {
   FiUser,
   FiSettings,
   FiHelpCircle,
-  FiMail
+  FiMail,
+  FiUsers
 } from "react-icons/fi";
 
 // Header Component
@@ -179,9 +193,12 @@ const Home = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
   const [viewMode, setViewMode] = useState("grid");
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isJoinOpen, onOpen: onJoinOpen, onClose: onJoinClose } = useDisclosure();
+  const { isOpen: isMembersOpen, onOpen: onMembersOpen, onClose: onMembersClose } = useDisclosure();
   
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
@@ -270,6 +287,16 @@ const Home = () => {
     return tags;
   };
 
+  const handleWorkspaceSelect = async (workspace) => {
+    setSelectedWorkspace(workspace);
+    
+    // Check if user is admin of the workspace
+    const isWorkspaceAdmin = workspace.createdBy === userData?.uid || userData?.role === "admin";
+    setIsAdmin(isWorkspaceAdmin);
+    
+    onMembersOpen();
+  };
+
   return (
     <Box minH="100vh" display="flex" flexDirection="column">
       {/* Header */}
@@ -314,7 +341,7 @@ const Home = () => {
                   </Button>
                 )}
                 <Button 
-                  onClick={onOpen}
+                  onClick={onJoinOpen}
                   variant="outline"
                   mr={3}
                   size={{ base: "sm", md: "md" }}
@@ -413,11 +440,26 @@ const Home = () => {
                 {viewMode === "grid" ? (
                   <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
                     {filteredWorkspaces.map((workspace) => (
-                      <WorkspaceCard 
-                        key={workspace.id} 
-                        workspace={workspace} 
-                        tags={getWorkspaceTags(workspace)}
-                      />
+                      <Box key={workspace.id} position="relative">
+                        <WorkspaceCard 
+                          workspace={workspace} 
+                          tags={getWorkspaceTags(workspace)}
+                        />
+                        <Button
+                          position="absolute"
+                          top="4"
+                          right="4"
+                          size="sm"
+                          colorScheme="teal"
+                          leftIcon={<FiUsers />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWorkspaceSelect(workspace);
+                          }}
+                        >
+                          Members
+                        </Button>
+                      </Box>
                     ))}
                   </SimpleGrid>
                 ) : (
@@ -434,10 +476,9 @@ const Home = () => {
                         justify="space-between"
                         transition="all 0.2s"
                         _hover={{ shadow: "md", borderColor: "teal.300" }}
-                        onClick={() => navigate(`/workspace/${workspace.id}`)}
                         cursor="pointer"
                       >
-                        <Box>
+                        <Box flex="1" onClick={() => navigate(`/workspace/${workspace.id}`)}>
                           <Heading size="md" mb={1}>{workspace.name}</Heading>
                           <Text color="gray.600" noOfLines={1} mb={2}>
                             {workspace.description || "No description provided"}
@@ -450,9 +491,22 @@ const Home = () => {
                             ))}
                           </HStack>
                         </Box>
-                        <Text color="gray.500" fontSize="sm">
-                          {workspace.members?.length || 0} members
-                        </Text>
+                        <HStack>
+                          <Text color="gray.500" fontSize="sm" mr={3}>
+                            {workspace.members?.length || 0} members
+                          </Text>
+                          <Button
+                            size="sm"
+                            colorScheme="teal"
+                            leftIcon={<FiUsers />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWorkspaceSelect(workspace);
+                            }}
+                          >
+                            Members
+                          </Button>
+                        </HStack>
                       </Flex>
                     ))}
                   </VStack>
@@ -503,7 +557,7 @@ const Home = () => {
                       <Button
                         colorScheme="teal"
                         variant="outline"
-                        onClick={onOpen}
+                        onClick={onJoinOpen}
                       >
                         Join Workspace
                       </Button>
@@ -521,10 +575,31 @@ const Home = () => {
 
       {/* Join workspace modal */}
       <JoinWorkspaceModal 
-        isOpen={isOpen} 
-        onClose={onClose} 
+        isOpen={isJoinOpen} 
+        onClose={onJoinClose} 
         onSuccess={handleJoinSuccess}
       />
+
+      {/* Members modal */}
+      <Modal isOpen={isMembersOpen} onClose={onMembersClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            {selectedWorkspace?.name} - Members
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {selectedWorkspace && (
+              <MembersTab workspaceId={selectedWorkspace.id} isAdmin={isAdmin} />
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="teal" mr={3} onClick={onMembersClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

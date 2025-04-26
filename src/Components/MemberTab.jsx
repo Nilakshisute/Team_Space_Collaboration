@@ -47,8 +47,8 @@ import {
   arrayRemove, 
   serverTimestamp 
 } from "firebase/firestore";
-import { db } from "../../firebase/firebaseConfig";
-import { useAuth } from "../../context/AuthContext";
+import { db } from "../firebase/firebaseConfig";
+import { useAuth } from "../context/AuthContext";
 import { FiUserPlus, FiTrash2, FiMail, FiCopy, FiCheck } from "react-icons/fi";
 
 const MembersTab = ({ workspaceId, isAdmin }) => {
