@@ -69,7 +69,7 @@ const Header = ({ userData, handleLogout }) => {
           <Flex align="center">
             {/* Logo could go here */}
             <Heading size="md" fontWeight="bold" cursor="pointer" onClick={() => navigate('/')}>
-              CollabSpace
+              TeamSpace
             </Heading>
           </Flex>
           
@@ -126,7 +126,7 @@ const Footer = () => {
           align={{ base: "center", md: "flex-start" }}
         >
           <Box textAlign={{ base: "center", md: "left" }} mb={{ base: 4, md: 0 }}>
-            <Heading size="md" mb={2}>CollabSpace</Heading>
+            <Heading size="md" mb={2}>TeamSpace</Heading>
             <Text color="gray.500" fontSize="sm">
               Your collaborative workspace solution.
             </Text>
@@ -151,7 +151,7 @@ const Footer = () => {
               <Text fontWeight="bold">Connect</Text>
               <HStack>
                 <FiMail />
-                <Link color="teal.500">support@collabspace.com</Link>
+                <Link color="teal.500">support@TeamSpace.com</Link>
               </HStack>
               <HStack>
                 <FiHelpCircle />
@@ -164,7 +164,7 @@ const Footer = () => {
         <Divider my={4} />
         
         <Text textAlign="center" fontSize="sm" color="gray.500">
-          © {new Date().getFullYear()} CollabSpace. All rights reserved.
+          © {new Date().getFullYear()} TeamSpace. All rights reserved.
         </Text>
       </Container>
     </Box>
