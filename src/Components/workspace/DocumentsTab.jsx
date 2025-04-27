@@ -50,6 +50,7 @@ const DocumentsTab = ({ workspaceId }) => {
   const fileInputRef = useRef(null);
   const {
     isOpen: isUploadOpen,
+    // eslint-disable-next-line no-unused-vars
     onOpen: onUploadOpen,
     onClose: onUploadClose,
   } = useDisclosure();
@@ -293,16 +294,16 @@ const DocumentsTab = ({ workspaceId }) => {
           <Button colorScheme="teal" onClick={onCreateOpen} mr={3}>
             Create Document
           </Button>
-          <Button colorScheme="blue" onClick={onUploadOpen}>
+          {/* <Button colorScheme="blue" onClick={onUploadOpen}>
             Upload File
-          </Button>
+          </Button> */}
         </Flex>
       </Flex>
 
       <Tabs variant="soft-rounded" colorScheme="teal" isLazy>
         <TabList mb={4}>
           <Tab>Editable Documents</Tab>
-          <Tab>Uploaded Files</Tab>
+          {/* <Tab>Uploaded Files</Tab> */}
         </TabList>
 
         <TabPanels>

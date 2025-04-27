@@ -1,20 +1,18 @@
-// Components/workspace/useDocumentData.jsx
 import { useState, useEffect } from "react";
 import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase/firebaseConfig"; // Adjust path as needed for your project
+import { db } from "../../firebase/firebaseConfig";
 
 export const useDocumentData = ({
   documentId,
   workspaceId,
   content,
-  documentName,
   userData,
   setContent,
   setDocumentName,
   setLastSaved,
   toast,
   navigate,
-  onRenameClose
+  onRenameClose,
 }) => {
   const [document, setDocument] = useState(null);
   const [workspace, setWorkspace] = useState(null);
@@ -26,33 +24,39 @@ export const useDocumentData = ({
   // Format date for display
   const formatDate = (date) => {
     if (!date) return "";
-    
+
     // Check if date is a timestamp or Date object
     const dateObj = date.toDate ? date.toDate() : new Date(date);
-    
+
     // Check if the date is today
     const now = new Date();
     const isToday = dateObj.toDateString() === now.toDateString();
-    
+
     if (isToday) {
-      return `today at ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `today at ${dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
     }
-    
+
     // Check if the date is yesterday
     const yesterday = new Date();
     yesterday.setDate(now.getDate() - 1);
     const isYesterday = dateObj.toDateString() === yesterday.toDateString();
-    
+
     if (isYesterday) {
-      return `yesterday at ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      return `yesterday at ${dateObj.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
     }
-    
+
     // Otherwise return full date
-    return dateObj.toLocaleDateString([], { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return dateObj.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -63,11 +67,11 @@ export const useDocumentData = ({
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Get document reference
         const docRef = doc(db, "documents", documentId);
         const docSnap = await getDoc(docRef);
-        
+
         if (!docSnap.exists()) {
           toast({
             title: "Document not found",
@@ -78,14 +82,15 @@ export const useDocumentData = ({
           navigate(`/workspace/${workspaceId}`);
           return;
         }
-        
+
         const docData = docSnap.data();
-        
+
         // Check permissions
         if (docData.workspaceId !== workspaceId) {
           toast({
             title: "Access denied",
-            description: "This document does not belong to the specified workspace",
+            description:
+              "This document does not belong to the specified workspace",
             status: "error",
             duration: 3000,
             isClosable: true,
@@ -93,11 +98,11 @@ export const useDocumentData = ({
           navigate(`/workspace/${workspaceId}`);
           return;
         }
-        
+
         // Get workspace data
         const wsRef = doc(db, "workspaces", workspaceId);
         const wsSnap = await getDoc(wsRef);
-        
+
         if (!wsSnap.exists()) {
           toast({
             title: "Workspace not found",
@@ -105,15 +110,17 @@ export const useDocumentData = ({
             duration: 3000,
             isClosable: true,
           });
-          navigate('/home');
+          navigate("/home");
           return;
         }
-        
+
         const wsData = wsSnap.data();
-        
+
         // Verify user has access to workspace
-        if (wsData.ownerId !== userData.uid && 
-            !wsData.members?.includes(userData.uid)) {
+        if (
+          wsData.ownerId !== userData.uid &&
+          !wsData.members?.includes(userData.uid)
+        ) {
           toast({
             title: "Access denied",
             description: "You don't have access to this workspace",
@@ -121,20 +128,20 @@ export const useDocumentData = ({
             duration: 3000,
             isClosable: true,
           });
-          navigate('/home');
+          navigate("/home");
           return;
         }
-        
+
         // Set document and workspace data
         setDocument(docData);
         setWorkspace(wsData);
         setContent(docData.content || "");
         setDocumentName(docData.name || "Untitled Document");
         setLastSaved(docData.updatedAt || null);
-        
+
         // Fetch collaborators data
         const collaboratorList = [];
-        
+
         // Add owner
         if (wsData.ownerId) {
           const ownerRef = doc(db, "users", wsData.ownerId);
@@ -143,31 +150,30 @@ export const useDocumentData = ({
             collaboratorList.push({
               id: wsData.ownerId,
               name: ownerSnap.data().displayName || "Owner",
-              isCurrentUser: wsData.ownerId === userData.uid
+              isCurrentUser: wsData.ownerId === userData.uid,
             });
           }
         }
-        
+
         // Add members if they exist
         if (wsData.members && wsData.members.length > 0) {
           for (const memberId of wsData.members) {
             // Skip if member is already processed (e.g., owner)
-            if (collaboratorList.some(c => c.id === memberId)) continue;
-            
+            if (collaboratorList.some((c) => c.id === memberId)) continue;
+
             const memberRef = doc(db, "users", memberId);
             const memberSnap = await getDoc(memberRef);
             if (memberSnap.exists()) {
               collaboratorList.push({
                 id: memberId,
                 name: memberSnap.data().displayName || "Member",
-                isCurrentUser: memberId === userData.uid
+                isCurrentUser: memberId === userData.uid,
               });
             }
           }
         }
-        
+
         setCollaborators(collaboratorList);
-        
       } catch (error) {
         console.error("Error fetching document data:", error);
         toast({
@@ -183,7 +189,7 @@ export const useDocumentData = ({
     };
 
     fetchData();
-    
+
     // Setup real-time listeners for document changes
     const docRef = doc(db, "documents", documentId);
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
@@ -193,60 +199,61 @@ export const useDocumentData = ({
         setDocument(docData);
         setDocumentName(docData.name || "Untitled Document");
         setLastSaved(docData.updatedAt || null);
-        
+
         // Update current editor status
         setCurrentEditor(docData.currentEditor || null);
       }
     });
-    
+
     // Set current editor when component mounts
     const updateCurrentEditor = async () => {
       try {
         await updateDoc(docRef, {
           currentEditor: userData.uid,
-          lastActivity: new Date()
+          lastActivity: new Date(),
         });
       } catch (error) {
         console.error("Error updating current editor:", error);
       }
     };
-    
+
     updateCurrentEditor();
-    
+
     // Clear current editor when component unmounts
     return () => {
       unsubscribe();
       const clearCurrentEditor = async () => {
         try {
           await updateDoc(docRef, {
-            currentEditor: null
+            currentEditor: null,
           });
         } catch (error) {
           console.error("Error clearing current editor:", error);
         }
       };
-      
+
       clearCurrentEditor();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentId, workspaceId, userData, navigate, toast]);
 
   // Function to save document
   const handleSave = async (isAutoSave = false) => {
     if (!documentId || !userData) return;
-    
+
     try {
       setSaving(true);
-      
+
       const docRef = doc(db, "documents", documentId);
-      
+
       await updateDoc(docRef, {
         content: content,
         updatedAt: new Date(),
-        updatedBy: userData.uid
+        updatedBy: userData.uid,
       });
-      
+
       setLastSaved(new Date());
-      
+
       if (!isAutoSave) {
         toast({
           title: "Document saved",
@@ -272,28 +279,28 @@ export const useDocumentData = ({
   // Function to rename document
   const handleRename = async (newName) => {
     if (!documentId || !userData || !newName.trim()) return;
-    
+
     try {
       setSaving(true);
-      
+
       const docRef = doc(db, "documents", documentId);
-      
+
       await updateDoc(docRef, {
         name: newName.trim(),
         updatedAt: new Date(),
-        updatedBy: userData.uid
+        updatedBy: userData.uid,
       });
-      
+
       setDocumentName(newName.trim());
       setLastSaved(new Date());
-      
+
       toast({
         title: "Document renamed",
         status: "success",
         duration: 2000,
         isClosable: true,
       });
-      
+
       onRenameClose();
     } catch (error) {
       console.error("Error renaming document:", error);
@@ -319,6 +326,6 @@ export const useDocumentData = ({
     currentEditor,
     handleSave,
     handleRename,
-    formatDate
+    formatDate,
   };
 };

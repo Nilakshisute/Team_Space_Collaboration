@@ -598,9 +598,7 @@ const WorkspaceDashboard = () => {
         </HStack>
       </Box>
 
-      {/* Main Content - FIXED: Moved Tabs outside the content area for better visibility */}
       <Box>
-        {/* Tabs are now outside the content area and clearly visible */}
         <Tabs colorScheme="teal" isLazy variant="line" size="md">
           <TabList
             px={5}
@@ -656,7 +654,7 @@ const WorkspaceDashboard = () => {
                 <GridItem>
                   <VStack spacing={6} align="stretch">
                     {/* Recent Activity Section */}
-                    <Card variant="outline" shadow="sm">
+                    {/* <Card variant="outline" shadow="sm">
                       <CardHeader pb={0}>
                         <Flex justify="space-between" align="center">
                           <Heading size="md">Recent Activity</Heading>
@@ -712,7 +710,7 @@ const WorkspaceDashboard = () => {
                           ))}
                         </VStack>
                       </CardBody>
-                    </Card>
+                    </Card> */}
 
                     {/* Recent Documents Section */}
                     <Card variant="outline" shadow="sm">
@@ -812,7 +810,7 @@ const WorkspaceDashboard = () => {
                 <GridItem>
                   <VStack spacing={6} align="stretch">
                     {/* Workspace Stats */}
-                    <Card variant="outline" shadow="sm">
+                    {/* <Card variant="outline" shadow="sm">
                       <CardHeader pb={0}>
                         <Heading size="md">Workspace Stats</Heading>
                       </CardHeader>
@@ -859,7 +857,7 @@ const WorkspaceDashboard = () => {
                           </Flex>
                         </Box>
                       </CardBody>
-                    </Card>
+                    </Card> */}
 
                     {/* Quick Actions */}
                     <Card variant="outline" shadow="sm">
