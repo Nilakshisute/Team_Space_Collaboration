@@ -11,7 +11,7 @@ Fullstack
 
 ## Deployed App
 
-Frontend: https://your-frontend-deployed-site.com  
+Frontend: https://team-space-collaboration.vercel.app/ 
 Backend/Database: Firebase Services (Authentication + Firestore Database)
 
 ## Directory Structure
@@ -45,11 +45,6 @@ teamspace/
 │  ├─ App.jsx
 │  ├─ index.js
 ```
-
-## Video Walkthrough of the project
-
-_(Attach a short 1-3 min walkthrough video showing login, create/join workspace, document editing, etc.)_
-
 
 ## Features
 
