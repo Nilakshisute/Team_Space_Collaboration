@@ -50,10 +50,6 @@ teamspace/
 
 _(Attach a short 1-3 min walkthrough video showing login, create/join workspace, document editing, etc.)_
 
-## Video Walkthrough of the codebase
-
-_(Attach a short 1-5 min walkthrough video explaining key parts of your code: routing, auth flow, document handling, workspace management.)_
-
 ## Features
 
 - 🔒 User Authentication (Login, Register, Forgot Password) with Firebase
