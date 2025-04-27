@@ -50,6 +50,7 @@ const DocumentsTab = ({ workspaceId }) => {
   const fileInputRef = useRef(null);
   const {
     isOpen: isUploadOpen,
+    // eslint-disable-next-line no-unused-vars
     onOpen: onUploadOpen,
     onClose: onUploadClose,
   } = useDisclosure();
@@ -135,93 +136,93 @@ const DocumentsTab = ({ workspaceId }) => {
   };
 
   // Make sure your firebase/firebaseConfig.js has Storage properly initialized
-// For example:
-// import { getStorage } from "firebase/storage";
-// export const storage = getStorage(app);
+  // For example:
+  // import { getStorage } from "firebase/storage";
+  // export const storage = getStorage(app);
 
-// In your handleUpload function, we need to ensure the file is being uploaded correctly:
+  // In your handleUpload function, we need to ensure the file is being uploaded correctly:
 
-const handleUpload = async () => {
-  if (!selectedFile) {
-    toast({
-      title: "No file selected",
-      status: "error",
-      duration: 3000,
-    });
-    return;
-  }
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      toast({
+        title: "No file selected",
+        status: "error",
+        duration: 3000,
+      });
+      return;
+    }
 
-  setUploading(true);
+    setUploading(true);
 
-  try {
-    // Create a unique file path to avoid conflicts
-    const timestamp = new Date().getTime();
-    const storageRef = ref(
-      storage,
-      `documents/${workspaceId}/${timestamp}_${selectedFile.name}`
-    );
-    
-    // Upload the file
-    const uploadTaskSnapshot = await uploadBytes(storageRef, selectedFile);
-    console.log("File uploaded successfully:", uploadTaskSnapshot);
-    
-    // Get the download URL
-    const downloadURL = await getDownloadURL(storageRef);
-    console.log("Download URL:", downloadURL);
+    try {
+      // Create a unique file path to avoid conflicts
+      const timestamp = new Date().getTime();
+      const storageRef = ref(
+        storage,
+        `documents/${workspaceId}/${timestamp}_${selectedFile.name}`
+      );
 
-    // Add document reference to Firestore
-    const docRef = await addDoc(collection(db, "documents"), {
-      name: documentName || selectedFile.name,
-      fileName: selectedFile.name,
-      fileType: selectedFile.type,
-      fileSize: selectedFile.size,
-      uploadedBy: userData.uid,
-      uploaderName: `${userData.firstName} ${userData.lastName}`,
-      workspaceId,
-      url: downloadURL,
-      type: "upload",
-      createdAt: serverTimestamp(),
-    });
+      // Upload the file
+      const uploadTaskSnapshot = await uploadBytes(storageRef, selectedFile);
+      console.log("File uploaded successfully:", uploadTaskSnapshot);
 
-    // Add new document to local state
-    const newDocument = {
-      id: docRef.id,
-      name: documentName || selectedFile.name,
-      fileName: selectedFile.name,
-      fileType: selectedFile.type,
-      fileSize: selectedFile.size,
-      uploadedBy: userData.uid,
-      uploaderName: `${userData.firstName} ${userData.lastName}`,
-      workspaceId,
-      url: downloadURL,
-      type: "upload",
-      createdAt: { seconds: Date.now() / 1000 } // Add this for display before server updates
-    };
-    
-    setDocuments(prevDocs => [...prevDocs, newDocument]);
+      // Get the download URL
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log("Download URL:", downloadURL);
 
-    toast({
-      title: "Document uploaded successfully",
-      status: "success",
-      duration: 3000,
-    });
+      // Add document reference to Firestore
+      const docRef = await addDoc(collection(db, "documents"), {
+        name: documentName || selectedFile.name,
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        uploadedBy: userData.uid,
+        uploaderName: `${userData.firstName} ${userData.lastName}`,
+        workspaceId,
+        url: downloadURL,
+        type: "upload",
+        createdAt: serverTimestamp(),
+      });
 
-    // Reset form and close modal
-    setDocumentName("");
-    setSelectedFile(null);
-    onUploadClose();
-  } catch (error) {
-    console.error("Upload error:", error);
-    toast({
-      title: "Error uploading document",
-      description: error.message,
-      status: "error",
-      duration: 3000,
-    });
-  } finally {
-    setUploading(false);
-  }
-};
+      // Add new document to local state
+      const newDocument = {
+        id: docRef.id,
+        name: documentName || selectedFile.name,
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+        fileSize: selectedFile.size,
+        uploadedBy: userData.uid,
+        uploaderName: `${userData.firstName} ${userData.lastName}`,
+        workspaceId,
+        url: downloadURL,
+        type: "upload",
+        createdAt: { seconds: Date.now() / 1000 }, // Add this for display before server updates
+      };
+
+      setDocuments((prevDocs) => [...prevDocs, newDocument]);
+
+      toast({
+        title: "Document uploaded successfully",
+        status: "success",
+        duration: 3000,
+      });
+
+      // Reset form and close modal
+      setDocumentName("");
+      setSelectedFile(null);
+      onUploadClose();
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Error uploading document",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleCreateDocument = async () => {
     if (!newDocName) {
@@ -293,16 +294,16 @@ const handleUpload = async () => {
           <Button colorScheme="teal" onClick={onCreateOpen} mr={3}>
             Create Document
           </Button>
-          <Button colorScheme="blue" onClick={onUploadOpen}>
+          {/* <Button colorScheme="blue" onClick={onUploadOpen}>
             Upload File
-          </Button>
+          </Button> */}
         </Flex>
       </Flex>
 
       <Tabs variant="soft-rounded" colorScheme="teal" isLazy>
         <TabList mb={4}>
           <Tab>Editable Documents</Tab>
-          <Tab>Uploaded Files</Tab>
+          {/* <Tab>Uploaded Files</Tab> */}
         </TabList>
 
         <TabPanels>
@@ -397,16 +398,17 @@ const handleUpload = async () => {
             </FormControl>
             <FormControl>
               <FormLabel>Select File</FormLabel>
-              <Input 
-                type="file" 
-                onChange={handleFileChange} 
-                p={1} 
+              <Input
+                type="file"
+                onChange={handleFileChange}
+                p={1}
                 ref={fileInputRef}
                 accept="*/*"
               />
               {selectedFile && (
                 <Text mt={2} fontSize="sm" color="gray.600">
-                  Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
+                  Selected: {selectedFile.name} (
+                  {(selectedFile.size / 1024).toFixed(2)} KB)
                 </Text>
               )}
             </FormControl>

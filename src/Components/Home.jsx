@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -42,24 +44,32 @@ import {
   ModalBody,
   ModalFooter,
 } from "@chakra-ui/react";
-import { collection, query, where, getDocs, orderBy, getDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  getDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import WorkspaceCard from "./workspace/WorkspaceCard";
 import JoinWorkspaceModal from "./JoinWorkspaceModel";
 import MembersTab from "./workspace/MembersTab";
-import { 
-  FiSearch, 
-  FiPlus, 
-  FiLogOut, 
-  FiFilter, 
-  FiGrid, 
+import {
+  FiSearch,
+  FiPlus,
+  FiLogOut,
+  FiFilter,
+  FiGrid,
   FiList,
   FiUser,
   FiSettings,
   FiHelpCircle,
   FiMail,
-  FiUsers
+  FiUsers,
 } from "react-icons/fi";
 
 // Header Component
@@ -67,11 +77,11 @@ const Header = ({ userData, handleLogout }) => {
   const navigate = useNavigate();
   const bgColor = useColorModeValue("teal.500", "teal.600");
   const borderColor = useColorModeValue("teal.600", "teal.700");
-  
+
   return (
-    <Box 
-      as="header" 
-      bg={bgColor} 
+    <Box
+      as="header"
+      bg={bgColor}
       color="white"
       boxShadow="md"
       position="sticky"
@@ -82,11 +92,16 @@ const Header = ({ userData, handleLogout }) => {
         <Flex justify="space-between" align="center">
           <Flex align="center">
             {/* Logo could go here */}
-            <Heading size="md" fontWeight="bold" cursor="pointer" onClick={() => navigate('/')}>
+            <Heading
+              size="md"
+              fontWeight="bold"
+              cursor="pointer"
+              onClick={() => navigate("/")}
+            >
               TeamSpace
             </Heading>
           </Flex>
-          
+
           <HStack spacing={4}>
             <Menu>
               <MenuButton
@@ -100,10 +115,16 @@ const Header = ({ userData, handleLogout }) => {
                 {userData?.firstName || "User"}
               </MenuButton>
               <MenuList color="black">
-                <MenuItem icon={<FiUser />} onClick={() => navigate('/profile')}>
+                <MenuItem
+                  icon={<FiUser />}
+                  onClick={() => navigate("/profile")}
+                >
                   Profile
                 </MenuItem>
-                <MenuItem icon={<FiSettings />} onClick={() => navigate('/settings')}>
+                <MenuItem
+                  icon={<FiSettings />}
+                  onClick={() => navigate("/settings")}
+                >
                   Settings
                 </MenuItem>
                 <Divider />
@@ -123,29 +144,34 @@ const Header = ({ userData, handleLogout }) => {
 const Footer = () => {
   const bgColor = useColorModeValue("gray.100", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
-  
+
   return (
-    <Box 
-      as="footer" 
+    <Box
+      as="footer"
       bg={bgColor}
-      borderTop="1px" 
+      borderTop="1px"
       borderColor={borderColor}
       py={6}
       mt={10}
     >
       <Container maxW="1200px">
-        <Flex 
+        <Flex
           direction={{ base: "column", md: "row" }}
           justify="space-between"
           align={{ base: "center", md: "flex-start" }}
         >
-          <Box textAlign={{ base: "center", md: "left" }} mb={{ base: 4, md: 0 }}>
-            <Heading size="md" mb={2}>TeamSpace</Heading>
+          <Box
+            textAlign={{ base: "center", md: "left" }}
+            mb={{ base: 4, md: 0 }}
+          >
+            <Heading size="md" mb={2}>
+              TeamSpace
+            </Heading>
             <Text color="gray.500" fontSize="sm">
               Your collaborative workspace solution.
             </Text>
           </Box>
-          
+
           <HStack spacing={8} alignItems="flex-start">
             <VStack align="flex-start" spacing={2}>
               <Text fontWeight="bold">Resources</Text>
@@ -153,14 +179,14 @@ const Footer = () => {
               <Link color="teal.500">Tutorials</Link>
               <Link color="teal.500">API</Link>
             </VStack>
-            
+
             <VStack align="flex-start" spacing={2}>
               <Text fontWeight="bold">Company</Text>
               <Link color="teal.500">About Us</Link>
               <Link color="teal.500">Contact</Link>
               <Link color="teal.500">Privacy Policy</Link>
             </VStack>
-            
+
             <VStack align="flex-start" spacing={2}>
               <Text fontWeight="bold">Connect</Text>
               <HStack>
@@ -174,9 +200,9 @@ const Footer = () => {
             </VStack>
           </HStack>
         </Flex>
-        
+
         <Divider my={4} />
-        
+
         <Text textAlign="center" fontSize="sm" color="gray.500">
           © {new Date().getFullYear()} TeamSpace. All rights reserved.
         </Text>
@@ -197,9 +223,17 @@ const Home = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
-  const { isOpen: isJoinOpen, onOpen: onJoinOpen, onClose: onJoinClose } = useDisclosure();
-  const { isOpen: isMembersOpen, onOpen: onMembersOpen, onClose: onMembersClose } = useDisclosure();
-  
+  const {
+    isOpen: isJoinOpen,
+    onOpen: onJoinOpen,
+    onClose: onJoinClose,
+  } = useDisclosure();
+  const {
+    isOpen: isMembersOpen,
+    onOpen: onMembersOpen,
+    onClose: onMembersClose,
+  } = useDisclosure();
+
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
 
@@ -235,15 +269,20 @@ const Home = () => {
 
   useEffect(() => {
     fetchWorkspaces();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userData, toast]);
 
   useEffect(() => {
     // Filter workspaces based on search term
-    const results = workspaces.filter(workspace => 
-      workspace.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (workspace.description && workspace.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    const results = workspaces.filter(
+      (workspace) =>
+        workspace.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (workspace.description &&
+          workspace.description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()))
     );
-    
+
     // Sort workspaces
     const sorted = [...results].sort((a, b) => {
       if (sortBy === "name") {
@@ -255,7 +294,7 @@ const Home = () => {
       }
       return 0;
     });
-    
+
     setFilteredWorkspaces(sorted);
   }, [searchTerm, workspaces, sortBy]);
 
@@ -272,7 +311,7 @@ const Home = () => {
   const handleJoinSuccess = (workspaceId) => {
     // Refresh workspaces after joining
     fetchWorkspaces();
-    
+
     // Navigate to the newly joined workspace after a brief delay
     setTimeout(() => {
       navigate(`/workspace/${workspaceId}`);
@@ -283,17 +322,22 @@ const Home = () => {
     const tags = [];
     if (workspace.isPublic) tags.push("Public");
     if (workspace.members?.length > 10) tags.push("Popular");
-    if (workspace.createdAt && (new Date() - workspace.createdAt.toDate()) < 604800000) tags.push("New");
+    if (
+      workspace.createdAt &&
+      new Date() - workspace.createdAt.toDate() < 604800000
+    )
+      tags.push("New");
     return tags;
   };
 
   const handleWorkspaceSelect = async (workspace) => {
     setSelectedWorkspace(workspace);
-    
+
     // Check if user is admin of the workspace
-    const isWorkspaceAdmin = workspace.createdBy === userData?.uid || userData?.role === "admin";
+    const isWorkspaceAdmin =
+      workspace.createdBy === userData?.uid || userData?.role === "admin";
     setIsAdmin(isWorkspaceAdmin);
-    
+
     onMembersOpen();
   };
 
@@ -301,30 +345,32 @@ const Home = () => {
     <Box minH="100vh" display="flex" flexDirection="column">
       {/* Header */}
       <Header userData={userData} handleLogout={handleLogout} />
-      
+
       {/* Main Content */}
       <Box flex="1" bg={useColorModeValue("gray.50", "gray.900")}>
         <Container maxW="1200px" px={{ base: 4, md: 6 }} py={8}>
           {/* Welcome Section */}
-          <Box 
-            bg={bgColor} 
-            p={6} 
-            borderRadius="lg" 
+          <Box
+            bg={bgColor}
+            p={6}
+            borderRadius="lg"
             boxShadow="sm"
             mb={6}
             borderWidth="1px"
             borderColor={borderColor}
           >
-            <Flex 
-              direction={{ base: "column", md: "row" }} 
-              justifyContent="space-between" 
+            <Flex
+              direction={{ base: "column", md: "row" }}
+              justifyContent="space-between"
               alignItems={{ base: "flex-start", md: "center" }}
             >
               <Box mb={{ base: 4, md: 0 }}>
-                <Heading size="lg" mb={1}>Welcome back, {userData?.firstName || "User"}</Heading>
+                <Heading size="lg" mb={1}>
+                  Welcome back, {userData?.firstName || "User"}
+                </Heading>
                 <Text color="gray.600">
-                  {userData?.role === "admin" 
-                    ? "Manage your workspaces and teams" 
+                  {userData?.role === "admin"
+                    ? "Manage your workspaces and teams"
                     : "Collaborate with your teams"}
                 </Text>
               </Box>
@@ -340,7 +386,7 @@ const Home = () => {
                     New Workspace
                   </Button>
                 )}
-                <Button 
+                <Button
                   onClick={onJoinOpen}
                   variant="outline"
                   mr={3}
@@ -353,7 +399,7 @@ const Home = () => {
           </Box>
 
           {/* Search and Filter Section */}
-          <Box 
+          <Box
             bg={bgColor}
             p={4}
             borderRadius="lg"
@@ -362,16 +408,16 @@ const Home = () => {
             borderWidth="1px"
             borderColor={borderColor}
           >
-            <Flex 
-              direction={{ base: "column", md: "row" }} 
-              justifyContent="space-between" 
+            <Flex
+              direction={{ base: "column", md: "row" }}
+              justifyContent="space-between"
               alignItems={{ base: "stretch", md: "center" }}
               gap={4}
             >
               <InputGroup maxW={{ base: "full", md: "400px" }}>
-                <Input 
-                  placeholder="Search workspaces..." 
-                  value={searchTerm} 
+                <Input
+                  placeholder="Search workspaces..."
+                  value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   bg={bgColor}
                   borderColor={borderColor}
@@ -380,37 +426,53 @@ const Home = () => {
                   <Icon as={FiSearch} color="gray.500" />
                 </InputRightElement>
               </InputGroup>
-              
+
               <Flex gap={2}>
                 <Menu>
-                  <MenuButton 
-                    as={Button} 
-                    rightIcon={<FiFilter />} 
+                  <MenuButton
+                    as={Button}
+                    rightIcon={<FiFilter />}
                     variant="outline"
                     size={{ base: "sm", md: "md" }}
                   >
-                    Sort: {sortBy === "name" ? "A-Z" : sortBy === "recent" ? "Recent" : "Members"}
+                    Sort:{" "}
+                    {sortBy === "name"
+                      ? "A-Z"
+                      : sortBy === "recent"
+                      ? "Recent"
+                      : "Members"}
                   </MenuButton>
                   <MenuList>
-                    <MenuItem onClick={() => setSortBy("name")}>Alphabetical</MenuItem>
-                    <MenuItem onClick={() => setSortBy("recent")}>Most Recent</MenuItem>
-                    <MenuItem onClick={() => setSortBy("members")}>Most Members</MenuItem>
+                    <MenuItem onClick={() => setSortBy("name")}>
+                      Alphabetical
+                    </MenuItem>
+                    <MenuItem onClick={() => setSortBy("recent")}>
+                      Most Recent
+                    </MenuItem>
+                    <MenuItem onClick={() => setSortBy("members")}>
+                      Most Members
+                    </MenuItem>
                   </MenuList>
                 </Menu>
-                
-                <HStack spacing={0} borderWidth="1px" borderRadius="md" overflow="hidden">
-                  <IconButton 
-                    icon={<FiGrid />} 
-                    aria-label="Grid view" 
+
+                <HStack
+                  spacing={0}
+                  borderWidth="1px"
+                  borderRadius="md"
+                  overflow="hidden"
+                >
+                  <IconButton
+                    icon={<FiGrid />}
+                    aria-label="Grid view"
                     variant={viewMode === "grid" ? "solid" : "outline"}
                     colorScheme={viewMode === "grid" ? "teal" : "gray"}
                     borderRadius="0"
                     size={{ base: "sm", md: "md" }}
                     onClick={() => setViewMode("grid")}
                   />
-                  <IconButton 
-                    icon={<FiList />} 
-                    aria-label="List view" 
+                  <IconButton
+                    icon={<FiList />}
+                    aria-label="List view"
                     variant={viewMode === "list" ? "solid" : "outline"}
                     colorScheme={viewMode === "list" ? "teal" : "gray"}
                     borderRadius="0"
@@ -423,7 +485,7 @@ const Home = () => {
           </Box>
 
           {/* Workspace Content */}
-          <Box 
+          <Box
             bg={bgColor}
             p={6}
             borderRadius="lg"
@@ -432,7 +494,12 @@ const Home = () => {
             borderColor={borderColor}
           >
             {loading ? (
-              <Flex justifyContent="center" alignItems="center" p={10} minH="300px">
+              <Flex
+                justifyContent="center"
+                alignItems="center"
+                p={10}
+                minH="300px"
+              >
                 <Spinner size="xl" color="teal.500" thickness="4px" />
               </Flex>
             ) : filteredWorkspaces.length > 0 ? (
@@ -441,8 +508,8 @@ const Home = () => {
                   <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
                     {filteredWorkspaces.map((workspace) => (
                       <Box key={workspace.id} position="relative">
-                        <WorkspaceCard 
-                          workspace={workspace} 
+                        <WorkspaceCard
+                          workspace={workspace}
                           tags={getWorkspaceTags(workspace)}
                         />
                         <Button
@@ -465,7 +532,7 @@ const Home = () => {
                 ) : (
                   <VStack spacing={4} align="stretch">
                     {filteredWorkspaces.map((workspace) => (
-                      <Flex 
+                      <Flex
                         key={workspace.id}
                         p={4}
                         borderWidth="1px"
@@ -478,14 +545,29 @@ const Home = () => {
                         _hover={{ shadow: "md", borderColor: "teal.300" }}
                         cursor="pointer"
                       >
-                        <Box flex="1" onClick={() => navigate(`/workspace/${workspace.id}`)}>
-                          <Heading size="md" mb={1}>{workspace.name}</Heading>
+                        <Box
+                          flex="1"
+                          onClick={() => navigate(`/workspace/${workspace.id}`)}
+                        >
+                          <Heading size="md" mb={1}>
+                            {workspace.name}
+                          </Heading>
                           <Text color="gray.600" noOfLines={1} mb={2}>
                             {workspace.description || "No description provided"}
                           </Text>
                           <HStack>
                             {getWorkspaceTags(workspace).map((tag, index) => (
-                              <Tag key={index} size="sm" colorScheme={tag === "Public" ? "green" : tag === "Popular" ? "purple" : "blue"}>
+                              <Tag
+                                key={index}
+                                size="sm"
+                                colorScheme={
+                                  tag === "Public"
+                                    ? "green"
+                                    : tag === "Popular"
+                                    ? "purple"
+                                    : "blue"
+                                }
+                              >
                                 {tag}
                               </Tag>
                             ))}
@@ -513,10 +595,10 @@ const Home = () => {
                 )}
               </>
             ) : (
-              <Box 
-                textAlign="center" 
-                p={10} 
-                bg={useColorModeValue("gray.50", "gray.700")} 
+              <Box
+                textAlign="center"
+                p={10}
+                bg={useColorModeValue("gray.50", "gray.700")}
                 borderRadius="lg"
                 borderWidth="1px"
                 borderColor={borderColor}
@@ -530,7 +612,11 @@ const Home = () => {
                     <Text mb={5}>
                       Try adjusting your search term or clear the filter.
                     </Text>
-                    <Button onClick={() => setSearchTerm("")} colorScheme="teal" variant="outline">
+                    <Button
+                      onClick={() => setSearchTerm("")}
+                      colorScheme="teal"
+                      variant="outline"
+                    >
                       Clear Search
                     </Button>
                   </>
@@ -569,14 +655,14 @@ const Home = () => {
           </Box>
         </Container>
       </Box>
-      
+
       {/* Footer */}
       <Footer />
 
       {/* Join workspace modal */}
-      <JoinWorkspaceModal 
-        isOpen={isJoinOpen} 
-        onClose={onJoinClose} 
+      <JoinWorkspaceModal
+        isOpen={isJoinOpen}
+        onClose={onJoinClose}
         onSuccess={handleJoinSuccess}
       />
 
@@ -584,13 +670,14 @@ const Home = () => {
       <Modal isOpen={isMembersOpen} onClose={onMembersClose} size="lg">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>
-            {selectedWorkspace?.name} - Members
-          </ModalHeader>
+          <ModalHeader>{selectedWorkspace?.name} - Members</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {selectedWorkspace && (
-              <MembersTab workspaceId={selectedWorkspace.id} isAdmin={isAdmin} />
+              <MembersTab
+                workspaceId={selectedWorkspace.id}
+                isAdmin={isAdmin}
+              />
             )}
           </ModalBody>
           <ModalFooter>
