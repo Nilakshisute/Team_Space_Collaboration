@@ -11,7 +11,7 @@ Fullstack
 
 ## Deployed App
 
-Frontend: https://team-space-collaboration.vercel.app/ 
+Frontend: https://team-space-collaboration.vercel.app/
 Backend/Database: Firebase Services (Authentication + Firestore Database)
 
 ## Directory Structure
